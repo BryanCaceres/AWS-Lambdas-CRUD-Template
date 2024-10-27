@@ -1,0 +1,4 @@
+requests
+requests
+aws-wsgi 
+flask
