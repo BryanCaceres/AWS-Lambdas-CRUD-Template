@@ -11,3 +11,4 @@ MarkupSafe
 requests==2.32.3
 urllib3==2.2.3
 Werkzeug==3.0.6
+pydantic==2.5.2

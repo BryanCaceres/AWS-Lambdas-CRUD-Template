@@ -30,6 +30,21 @@ Resources:
           Properties:
             Path: /embergadura
             Method: get
+        CreateProduct:
+          Type: Api
+          Properties:
+            Path: /products
+            Method: post
+            RequestModel:
+              Model: ProductCreateModel
+              ValidateBody: true
+
+  ProductCreateModel:
+    Type: AWS::ApiGateway::Model
+    Properties:
+      ContentType: application/json
+      RestApiId: !Ref ServerlessRestApi
+      Schema: ${file(src/schemas/products/create.json)}
 
 Outputs:
   HelloWorldApi:
