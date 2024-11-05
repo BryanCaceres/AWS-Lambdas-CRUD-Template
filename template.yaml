@@ -30,6 +30,31 @@ Resources:
           Properties:
             Path: /embergadura
             Method: get
+        CreateProduct:
+          Type: Api
+          Properties:
+            Path: /products
+            Method: post
+            RequestModel:
+              Model: ProductCreateModel
+              ValidateBody: true
+
+  ProductCreateModel:
+    Type: AWS::ApiGateway::Model
+    Properties:
+      ContentType: application/json
+      RestApiId: !Ref ServerlessRestApi
+      Schema: ${file(src/schemas/products/create.json)}
+
+  FlaskLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: flask-layer
+      Description: Flask and related dependencies
+      ContentUri: ./lambda-layers/flask-layer/
+      CompatibleRuntimes:
+        - python3.8
+      RetentionPolicy: Retain
 
 Outputs:
   HelloWorldApi:

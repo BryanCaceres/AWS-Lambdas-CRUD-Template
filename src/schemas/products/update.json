@@ -1,0 +1,37 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "ProductCreateModel",
+    "type": "object",
+    "required": [
+      "name",
+      "price"
+    ],
+    "properties": {
+      "name": {
+        "type": "string",
+        "minLength": 2,
+        "maxLength": 150,
+        "errorMessage": {
+          "type": "El campo 'name' debe ser una cadena de texto",
+          "minLength": "El nombre del producto debe tener al menos 2 caracteres",
+          "maxLength": "El nombre del producto no puede exceder los 150 caracteres"
+        }
+      },
+      "price": {
+        "type": "integer",
+        "minimum": 10,
+        "maximum": 1000000,
+        "errorMessage": {
+          "type": "El campo 'price' debe ser un número entero",
+          "minimum": "El precio mínimo debe ser 10",
+          "maximum": "El precio máximo permitido es 1000000"
+        }
+      }
+    },
+    "errorMessage": {
+      "required": {
+        "name": "El campo 'name' es requerido",
+        "price": "El campo 'price' es requerido"
+      }
+    }
+}
