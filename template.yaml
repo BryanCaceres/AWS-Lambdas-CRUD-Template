@@ -14,7 +14,7 @@ Resources:
   FlaskApi:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: flask-api
+      CodeUri: src
       Handler: lambda_handler.lambda_handler
       Runtime: python3.8
       Architectures:
@@ -25,11 +25,23 @@ Resources:
           Properties:
             Path: /health
             Method: get
-        EmbergaduraApi:
+        GetProduct:
           Type: Api
           Properties:
-            Path: /embergadura
+            Path: /products/{id}
             Method: get
+            RequestParameters:
+              - method.request.path.id:
+                  Required: true
+                  Type: integer
+        UpdateProduct:
+          Type: Api
+          Properties:
+            Path: /products/{id}
+            Method: put
+            RequestModel:
+              Model: ProductUpdateModel
+              ValidateBody: true
         CreateProduct:
           Type: Api
           Properties:
@@ -38,6 +50,20 @@ Resources:
             RequestModel:
               Model: ProductCreateModel
               ValidateBody: true
+
+  ProductGetModel:
+    Type: AWS::ApiGateway::Model
+    Properties:
+      ContentType: application/json
+      RestApiId: !Ref ServerlessRestApi
+      Schema: ${file(src/schemas/products/get.json)}
+
+  ProductUpdateModel:
+    Type: AWS::ApiGateway::Model
+    Properties:
+      ContentType: application/json
+      RestApiId: !Ref ServerlessRestApi
+      Schema: ${file(src/schemas/products/update.json)}
 
   ProductCreateModel:
     Type: AWS::ApiGateway::Model
@@ -49,8 +75,8 @@ Resources:
   FlaskLayer:
     Type: AWS::Serverless::LayerVersion
     Properties:
-      LayerName: flask-layer
-      Description: Flask and related dependencies
+      LayerName: !Sub "${AWS::StackName}-flask-layer-${Environment}"
+      Description: "Flask API Layer v1.0.0"
       ContentUri: ./lambda-layers/flask-layer/
       CompatibleRuntimes:
         - python3.8

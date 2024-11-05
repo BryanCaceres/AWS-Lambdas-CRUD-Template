@@ -38,8 +38,10 @@ class ProdConfig(BaseConfig):
 
 def get_config() -> BaseConfig:
     stage = os.getenv("STAGE", "DEV")
+    
     if stage == "PROD":
         return ProdConfig()
+    
     return DevConfig()
 
 app_config = get_config()

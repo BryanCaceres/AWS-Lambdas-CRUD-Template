@@ -5,7 +5,7 @@ products_bp = Blueprint('products', __name__)
 # La validación de los datos de entrada ya está hecha por API Gateway
 
 @products_bp.route('/<int:id>', methods=['GET'])
-def get_product_by_id(id):
+def get_product(id):
     products_service = ProductsService()
     product = products_service.get_product_by_id(id)
     return jsonify(message=product)

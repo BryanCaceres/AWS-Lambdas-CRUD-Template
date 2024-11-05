@@ -12,12 +12,18 @@ Link asociados:
 
 ## Paso a Paso
 
-Con este comando se construye el proyecto en un contenedor de Docker
+### Construir la capa con las dependencias de Flask
+
+```bash
+python build_layer.py
+```
+
+### Construir el proyecto en un contenedor de Docker
 ```bash
 sam build --use-container
 ```
 
-Con este comando se inicia el servidor local con los endpoints configurados en el template.yaml
+### Iniciar el servidor local con los endpoints configurados en el template.yaml
 
 Esto te permitirá probar los endpoints en tu máquina local
 
@@ -25,7 +31,8 @@ Esto te permitirá probar los endpoints en tu máquina local
 sam local start-api
 ```
 
-Para desplegar el proyecto en AWS
+### Desplegar el proyecto en AWS
+
 ```bash
 sam deploy --guided
 ```
