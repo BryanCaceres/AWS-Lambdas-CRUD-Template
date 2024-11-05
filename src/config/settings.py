@@ -1,47 +1,48 @@
+from dataclasses import dataclass
+from typing import Optional
+from aws_lambda_powertools.utilities import parameters
 from enum import Enum
-import os
 import logging
 
 class EnvironmentType(Enum):
     DEV = "DEV"
     PROD = "PROD"
 
-class BaseConfig:
-    def __init__(self):
-        self.AWS_REGION = os.getenv("AWS_REGION", "us-east-1")
-        self.configure_logging()
+@dataclass
+class AppConfig:
+    stage: EnvironmentType
+    log_level: str
+    database_url: Optional[str] = None
+    api_key: Optional[str] = None
 
-    def configure_logging(self):
-        raise NotImplementedError("Este método debe ser implementado en las subclases")
+class ConfigurationManager:
+    def __init__(self, environment: EnvironmentType):
+        self.environment = environment
+        self._config: Optional[AppConfig] = None
 
-class DevConfig(BaseConfig):
-    def __init__(self):
-        super().__init__()
-        self.STAGE = EnvironmentType.DEV
-        self.LOG_LEVEL = "DEBUG"
-        self.configure_logging()
+    def load_configuration(self) -> AppConfig:
+        try:
+            params = parameters.get_parameter(
+                f"/myapp/{self.environment.value.lower()}/config",
+                transform="json",
+                force_fetch=True
+            )
+            
+            self._config = AppConfig(
+                stage=self.environment,
+                log_level=params.get("LOG_LEVEL", "DEBUG"),
+                database_url=params.get("DATABASE_URL"),
+                api_key=params.get("API_KEY")
+            )
+            
+            self._configure_logging()
+            return self._config
+        except Exception as e:
+            logging.error(f"Error loading configuration: {e}")
+            raise
 
-    def configure_logging(self):
-        logging.basicConfig(level=self.LOG_LEVEL)
-        logging.info("Logging configurado en modo DEV: nivel DEBUG")
-
-class ProdConfig(BaseConfig):
-    def __init__(self):
-        super().__init__()
-        self.STAGE = EnvironmentType.PROD
-        self.LOG_LEVEL = "ERROR"
-        self.configure_logging()
-
-    def configure_logging(self):
-        logging.basicConfig(level=self.LOG_LEVEL)
-        logging.info("Logging configurado en modo PROD: nivel ERROR")
-
-def get_config() -> BaseConfig:
-    stage = os.getenv("STAGE", "DEV")
-    
-    if stage == "PROD":
-        return ProdConfig()
-    
-    return DevConfig()
-
-app_config = get_config()
+    def _configure_logging(self):
+        logging.basicConfig(
+            level=self._config.log_level,
+            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        )

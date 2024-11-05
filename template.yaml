@@ -50,21 +50,18 @@ Resources:
             RequestModel:
               Model: ProductCreateModel
               ValidateBody: true
-
   ProductGetModel:
     Type: AWS::ApiGateway::Model
     Properties:
       ContentType: application/json
       RestApiId: !Ref ServerlessRestApi
       Schema: ${file(src/schemas/products/get.json)}
-
   ProductUpdateModel:
     Type: AWS::ApiGateway::Model
     Properties:
       ContentType: application/json
       RestApiId: !Ref ServerlessRestApi
-      Schema: ${file(src/schemas/products/update.json)}
-
+      Schema: ${file(src/schemas/products/update.json)}s
   ProductCreateModel:
     Type: AWS::ApiGateway::Model
     Properties:
@@ -81,6 +78,30 @@ Resources:
       CompatibleRuntimes:
         - python3.8
       RetentionPolicy: Retain
+  ErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: Lambda function error rate > 1%
+      MetricName: Errors
+      Namespace: AWS/Lambda
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanThreshold
+
+  ApiGatewayApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+      Cors:
+        AllowMethods: "'GET,POST,PUT,DELETE'"
+        AllowHeaders: "'Content-Type,Authorization'"
+        AllowOrigin: "'*'"
+      Auth:
+        ApiKeyRequired: true
+      ThrottlingBurstLimit: 100
+      ThrottlingRateLimit: 50
 
 Outputs:
   HelloWorldApi:
