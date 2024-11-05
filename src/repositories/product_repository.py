@@ -1,7 +1,7 @@
 import logging
 
-class ClientRepository:
-    def create_product(self, product):
+class ProductRepository:
+    def create(self, product):
         """
         :param product: Instancia del producto a crear
         :return: Instancia del producto creado
@@ -15,7 +15,7 @@ class ClientRepository:
 
         return product_created
     
-    def update_product(self, id, product_data):
+    def update(self, id, product_data):
         """
         :param id: Identificador del producto a actualizar
         :param product_data: Diccionario con los nuevos datos del producto a actualizar
@@ -31,7 +31,7 @@ class ClientRepository:
         
         return dummy_product
     
-    def get_product_by_id(self, id):
+    def get_by_id(self, id):
         """
         :param id: Identificador del producto a obtener
         :return: Instancia del producto obtenido

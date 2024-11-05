@@ -1,5 +1,5 @@
 import awsgi
-from src import app
+from .app import app
 from aws_lambda_powertools import Tracer, Logger, Metrics
 from aws_lambda_powertools.metrics import MetricUnit
 

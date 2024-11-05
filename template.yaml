@@ -11,14 +11,25 @@ Globals:
     MemorySize: 256
 
 Resources:
+  FlaskLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: flask-layer
+      Description: Layer for Flask and dependencies v1.0.0
+      ContentUri: lambda-layers/flask-layer
+      CompatibleRuntimes:
+        - python3.8
+      RetentionPolicy: Retain
   FlaskApi:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: src
-      Handler: lambda_handler.lambda_handler
+      CodeUri: .
+      Handler: src.lambda_handler.lambda_handler
       Runtime: python3.8
       Architectures:
         - x86_64
+      Layers:
+        - !Ref FlaskLayer
       Events:
         HealthCheckApi:
           Type: Api
@@ -68,16 +79,6 @@ Resources:
       ContentType: application/json
       RestApiId: !Ref ServerlessRestApi
       Schema: ${file(src/schemas/products/create.json)}
-
-  FlaskLayer:
-    Type: AWS::Serverless::LayerVersion
-    Properties:
-      LayerName: !Sub "${AWS::StackName}-flask-layer-${Environment}"
-      Description: "Flask API Layer v1.0.0"
-      ContentUri: ./lambda-layers/flask-layer/
-      CompatibleRuntimes:
-        - python3.8
-      RetentionPolicy: Retain
   ErrorAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
@@ -100,8 +101,11 @@ Resources:
         AllowOrigin: "'*'"
       Auth:
         ApiKeyRequired: true
-      ThrottlingBurstLimit: 100
-      ThrottlingRateLimit: 50
+      MethodSettings:
+        - ThrottlingBurstLimit: 100
+          ThrottlingRateLimit: 50
+          ResourcePath: "/*"
+          HttpMethod: "*"
 
 Outputs:
   HelloWorldApi:
