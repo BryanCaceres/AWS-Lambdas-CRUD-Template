@@ -9,7 +9,7 @@ def get_product(id):
     product = products_service.get_product_by_id(id)
     return jsonify(message=product)
 
-@products_bp.route('/<int:id>', methods=['PUT'])
+@products_bp.route('/<int:id>', methods=['PATCH'])
 def update_product(id):
     products_service = ProductsService()
     product = products_service.update_product(id, request.json)

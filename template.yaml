@@ -49,7 +49,7 @@ Resources:
           Type: Api
           Properties:
             Path: /products/{id}
-            Method: put
+            Method: patch
             RequestModel:
               Model: ProductUpdateModel
               ValidateBody: true

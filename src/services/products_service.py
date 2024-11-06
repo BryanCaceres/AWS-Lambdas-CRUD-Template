@@ -23,7 +23,15 @@ class ProductsService:
         :param product_data: Diccionario con los datos del producto según el esquema de validación del endpoint
         :return: Instancia del producto ya actualizado
         """
-        pass
+        try:
+            logging.info(f'Se quiere actualizar el producto con id {id} con los datos {product_data}')
+            
+            updated_product = self.product_repository.update(id, product_data)
+            
+            return updated_product
+        except Exception as e:
+            logging.error(f'Error al actualizar el producto: {e}')
+            return {'error': 'Error al actualizar el producto'}, 500
 
     def create_product(self, product: Dict) -> Dict:
         """

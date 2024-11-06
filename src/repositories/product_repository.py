@@ -14,7 +14,7 @@ class ProductRepository:
         logging.info(f'Producto creado: {product_created}')
 
         return product_created
-    
+
     def update(self, id, product_data):
         """
         :param id: Identificador del producto a actualizar
