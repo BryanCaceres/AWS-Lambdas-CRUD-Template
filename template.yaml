@@ -11,25 +11,48 @@ Globals:
     MemorySize: 256
 
 Resources:
+  FlaskLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: flask-layer
+      Description: Layer for Flask and dependencies v1.0.0
+      ContentUri: lambda-layers/flask-layer
+      CompatibleRuntimes:
+        - python3.8
+      RetentionPolicy: Retain
   FlaskApi:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: flask-api
-      Handler: lambda_handler.lambda_handler
+      CodeUri: .
+      Handler: src.lambda_handler.lambda_handler
       Runtime: python3.8
       Architectures:
         - x86_64
+      Layers:
+        - !Ref FlaskLayer
       Events:
         HealthCheckApi:
           Type: Api
           Properties:
             Path: /health
             Method: get
-        EmbergaduraApi:
+        GetProduct:
           Type: Api
           Properties:
-            Path: /embergadura
+            Path: /products/{id}
             Method: get
+            RequestParameters:
+              - method.request.path.id:
+                  Required: true
+                  Type: integer
+        UpdateProduct:
+          Type: Api
+          Properties:
+            Path: /products/{id}
+            Method: patch
+            RequestModel:
+              Model: ProductUpdateModel
+              ValidateBody: true
         CreateProduct:
           Type: Api
           Properties:
@@ -38,23 +61,51 @@ Resources:
             RequestModel:
               Model: ProductCreateModel
               ValidateBody: true
-
+  ProductGetModel:
+    Type: AWS::ApiGateway::Model
+    Properties:
+      ContentType: application/json
+      RestApiId: !Ref ServerlessRestApi
+      Schema: ${file(src/schemas/products/get.json)}
+  ProductUpdateModel:
+    Type: AWS::ApiGateway::Model
+    Properties:
+      ContentType: application/json
+      RestApiId: !Ref ServerlessRestApi
+      Schema: ${file(src/schemas/products/update.json)}s
   ProductCreateModel:
     Type: AWS::ApiGateway::Model
     Properties:
       ContentType: application/json
       RestApiId: !Ref ServerlessRestApi
       Schema: ${file(src/schemas/products/create.json)}
-
-  FlaskLayer:
-    Type: AWS::Serverless::LayerVersion
+  ErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
     Properties:
-      LayerName: flask-layer
-      Description: Flask and related dependencies
-      ContentUri: ./lambda-layers/flask-layer/
-      CompatibleRuntimes:
-        - python3.8
-      RetentionPolicy: Retain
+      AlarmDescription: Lambda function error rate > 1%
+      MetricName: Errors
+      Namespace: AWS/Lambda
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanThreshold
+
+  ApiGatewayApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+      Cors:
+        AllowMethods: "'GET,POST,PUT,DELETE'"
+        AllowHeaders: "'Content-Type,Authorization'"
+        AllowOrigin: "'*'"
+      Auth:
+        ApiKeyRequired: true
+      MethodSettings:
+        - ThrottlingBurstLimit: 100
+          ThrottlingRateLimit: 50
+          ResourcePath: "/*"
+          HttpMethod: "*"
 
 Outputs:
   HelloWorldApi:

@@ -5,6 +5,9 @@
 ### Linux ###
 *~
 .env
+# Lambda Layer dependencies
+lambda-layers/flask-layer/python/*
+!lambda-layers/flask-layer/python/.gitkeep
 
 # temporary files which can be created if a process still has a handle open of a deleted file
 .fuse_hidden*
