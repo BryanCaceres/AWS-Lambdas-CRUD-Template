@@ -45,6 +45,8 @@ Resources:
               - method.request.path.id:
                   Required: true
                   Type: integer
+            Auth:
+              Authorizer: CognitoAuthorizer
         UpdateProduct:
           Type: Api
           Properties:
@@ -53,6 +55,8 @@ Resources:
             RequestModel:
               Model: ProductUpdateModel
               ValidateBody: true
+            Auth:
+              Authorizer: CognitoAuthorizer
         CreateProduct:
           Type: Api
           Properties:
@@ -61,6 +65,9 @@ Resources:
             RequestModel:
               Model: ProductCreateModel
               ValidateBody: true
+            Auth:
+              Authorizer: CognitoAuthorizer
+
   ProductGetModel:
     Type: AWS::ApiGateway::Model
     Properties:
@@ -79,6 +86,7 @@ Resources:
       ContentType: application/json
       RestApiId: !Ref ServerlessRestApi
       Schema: ${file(src/schemas/products/create.json)}
+
   ErrorAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
@@ -95,17 +103,56 @@ Resources:
     Type: AWS::Serverless::Api
     Properties:
       StageName: Prod
+      Auth:
+        DefaultAuthorizer: CognitoAuthorizer
+        Authorizers:
+          CognitoAuthorizer:
+            UserPoolArn: !GetAtt UserPool.Arn
       Cors:
         AllowMethods: "'GET,POST,PUT,DELETE'"
         AllowHeaders: "'Content-Type,Authorization'"
         AllowOrigin: "'*'"
-      Auth:
-        ApiKeyRequired: true
       MethodSettings:
-        - ThrottlingBurstLimit: 100
-          ThrottlingRateLimit: 50
-          ResourcePath: "/*"
+        - ResourcePath: "/*"
           HttpMethod: "*"
+          ThrottlingBurstLimit: 100
+          ThrottlingRateLimit: 50
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: MyAPIUserPool
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireUppercase: true
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: true
+      Schema:
+        - Name: email
+          Required: true
+          Mutable: true
+      AutoVerifiedAttributes:
+        - email
+
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref UserPool
+      ClientName: MyAPIClient
+      GenerateSecret: false
+      SupportedIdentityProviders:
+        - COGNITO
+      CallbackURLs:
+        - https://your-app-domain.com/callback
+      LogoutURLs:
+        - https://your-app-domain.com/logout
+      AllowedOAuthFlows:
+        - code
+      AllowedOAuthScopes:
+        - email
+        - openid
+        - profile
 
 Outputs:
   HelloWorldApi:

@@ -8,6 +8,7 @@ class AppConfig:
     log_level: str
     database_url: Optional[str] = None
     api_key: Optional[str] = None
+    jwt_secret_key: Optional[str] = None
 
 class ConfigurationManager:
     def __init__(self):
@@ -24,7 +25,8 @@ class ConfigurationManager:
             self._config = AppConfig(
                 log_level=params.get("LOG_LEVEL", "DEBUG"),
                 database_url=params.get("DATABASE_URL"),
-                api_key=params.get("API_KEY")
+                api_key=params.get("API_KEY"),
+                jwt_secret_key=params.get("JWT_SECRET_KEY")
             )
             
             self._configure_logging()
@@ -38,3 +40,5 @@ class ConfigurationManager:
             level=self._config.log_level,
             format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
         )
+
+app_config = ConfigurationManager().load_configuration()
