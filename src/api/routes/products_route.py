@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request
 from src.services.products_service import ProductsService
 
+
 products_bp = Blueprint('products', __name__)
 
 @products_bp.route('/<int:id>', methods=['GET'])
