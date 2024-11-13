@@ -18,14 +18,14 @@ Resources:
       Description: Layer for Flask and dependencies v1.0.0
       ContentUri: lambda-layers/flask-layer
       CompatibleRuntimes:
-        - python3.8
+        - python3.9
       RetentionPolicy: Retain
   FlaskApi:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: .
       Handler: src.lambda_handler.lambda_handler
-      Runtime: python3.8
+      Runtime: python3.9
       Architectures:
         - x86_64
       Layers:
