@@ -33,6 +33,14 @@ sam local start-api
 
 ### Desplegar el proyecto en AWS
 
+Previo a desplegar recomiendo que cualquier cambio en tu template.yaml sea probado localmente para evitar errores de sintaxis.
+
+```bash
+sam validate --lint
+```
+
+Después de haber probado localmente tu template.yaml, puedes desplegar tu proyecto en AWS.
+
 ```bash
 sam deploy --guided
 ```

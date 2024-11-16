@@ -34,59 +34,43 @@ Resources:
         HealthCheckApi:
           Type: Api
           Properties:
+            RestApiId: !Ref ApiGatewayApi
             Path: /health
             Method: get
+            Auth:
+              ApiKey: true
         GetProduct:
           Type: Api
           Properties:
+            RestApiId: !Ref ApiGatewayApi
             Path: /products/{id}
             Method: get
-            RequestParameters:
-              - method.request.path.id:
-                  Required: true
-                  Type: integer
             Auth:
-              Authorizer: CognitoAuthorizer
+              ApiKey: true
+            RequestParameters:
+              method.request.path.id: true
         UpdateProduct:
           Type: Api
           Properties:
+            RestApiId: !Ref ApiGatewayApi
             Path: /products/{id}
             Method: patch
+            Auth:
+              ApiKey: true
             RequestModel:
               Model: ProductUpdateModel
               ValidateBody: true
-            Auth:
-              Authorizer: CognitoAuthorizer
         CreateProduct:
           Type: Api
           Properties:
+            RestApiId: !Ref ApiGatewayApi
             Path: /products
             Method: post
+            Auth:
+              ApiKey: true
             RequestModel:
               Model: ProductCreateModel
               ValidateBody: true
-            Auth:
-              Authorizer: CognitoAuthorizer
-
-  ProductGetModel:
-    Type: AWS::ApiGateway::Model
-    Properties:
-      ContentType: application/json
-      RestApiId: !Ref ServerlessRestApi
-      Schema: ${file(src/schemas/products/get.json)}
-  ProductUpdateModel:
-    Type: AWS::ApiGateway::Model
-    Properties:
-      ContentType: application/json
-      RestApiId: !Ref ServerlessRestApi
-      Schema: ${file(src/schemas/products/update.json)}s
-  ProductCreateModel:
-    Type: AWS::ApiGateway::Model
-    Properties:
-      ContentType: application/json
-      RestApiId: !Ref ServerlessRestApi
-      Schema: ${file(src/schemas/products/create.json)}
-
   ErrorAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
@@ -103,64 +87,62 @@ Resources:
     Type: AWS::Serverless::Api
     Properties:
       StageName: Prod
+      Models:
+        ProductCreateModel:
+          type: object
+          contentType: application/json
+          schema: ${file(src/schemas/products/create.json)}
+        ProductUpdateModel:
+          type: object
+          contentType: application/json
+          schema: ${file(src/schemas/products/update.json)}
       Auth:
-        DefaultAuthorizer: CognitoAuthorizer
-        Authorizers:
-          CognitoAuthorizer:
-            UserPoolArn: !GetAtt UserPool.Arn
+        ApiKeyRequired: true
       Cors:
         AllowMethods: "'GET,POST,PUT,DELETE'"
-        AllowHeaders: "'Content-Type,Authorization'"
+        AllowHeaders: "'Content-Type,X-Api-Key'"
         AllowOrigin: "'*'"
       MethodSettings:
         - ResourcePath: "/*"
           HttpMethod: "*"
           ThrottlingBurstLimit: 100
           ThrottlingRateLimit: 50
-  UserPool:
-    Type: AWS::Cognito::UserPool
+  ApiKey:
+    Type: AWS::ApiGateway::ApiKey
     Properties:
-      UserPoolName: MyAPIUserPool
-      Policies:
-        PasswordPolicy:
-          MinimumLength: 8
-          RequireUppercase: true
-          RequireLowercase: true
-          RequireNumbers: true
-          RequireSymbols: true
-      Schema:
-        - Name: email
-          Required: true
-          Mutable: true
-      AutoVerifiedAttributes:
-        - email
+      Name: MyServiceApiKey
+      Description: Default API Key
+      Enabled: true
 
-  UserPoolClient:
-    Type: AWS::Cognito::UserPoolClient
+  ApiUsagePlan:
+    Type: AWS::ApiGateway::UsagePlan
     Properties:
-      UserPoolId: !Ref UserPool
-      ClientName: MyAPIClient
-      GenerateSecret: false
-      SupportedIdentityProviders:
-        - COGNITO
-      CallbackURLs:
-        - https://your-app-domain.com/callback
-      LogoutURLs:
-        - https://your-app-domain.com/logout
-      AllowedOAuthFlows:
-        - code
-      AllowedOAuthScopes:
-        - email
-        - openid
-        - profile
+      UsagePlanName: BasicUsagePlan
+      Description: Basic usage plan for my API
+      ApiStages:
+        - ApiId: !Ref ApiGatewayApi
+          Stage: Prod
+      Quota:
+        Limit: 5000
+        Period: MONTH
+      Throttle:
+        BurstLimit: 100
+        RateLimit: 50
+
+  ApiKeyUsagePlanKey:
+    Type: AWS::ApiGateway::UsagePlanKey
+    Properties:
+      KeyId: !Ref ApiKey
+      KeyType: API_KEY
+      UsagePlanId: !Ref ApiUsagePlan
 
 Outputs:
-  HelloWorldApi:
-    Description: "API Gateway endpoint URL for Prod stage for Hello World function"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/"
-  HelloWorldFunction:
-    Description: "Hello World Lambda Function ARN"
-    Value: !GetAtt HelloWorldFunction.Arn
-  HelloWorldFunctionIamRole:
-    Description: "Implicit IAM Role created for Hello World function"
-    Value: !GetAtt HelloWorldFunctionRole.Arn
+  ApiEndpoint:
+    Description: "API Gateway endpoint URL for Prod stage"
+    Value: !Sub "https://${ApiGatewayApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
+  FlaskApiFunction:
+    Description: "Flask API Lambda Function ARN"
+    Value: !GetAtt FlaskApi.Arn
+  FlaskApiRole:
+    Description: "IAM Role created for Flask API function"
+    Value: !GetAtt FlaskApi.Arn
