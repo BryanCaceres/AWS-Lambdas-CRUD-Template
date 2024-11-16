@@ -85,6 +85,7 @@ Resources:
 
   ApiGatewayApi:
     Type: AWS::Serverless::Api
+    DependsOn: ApiGatewayAccount
     Properties:
       StageName: Prod
       Models:
@@ -99,8 +100,8 @@ Resources:
       Auth:
         ApiKeyRequired: true
       Cors:
-        AllowMethods: "'GET,POST,PUT,DELETE'"
-        AllowHeaders: "'Content-Type,X-Api-Key'"
+        AllowMethods: "'GET,POST,PATCH,DELETE,OPTIONS'"
+        AllowHeaders: "'Content-Type,X-Api-Key,Authorization'"
         AllowOrigin: "'*'"
       MethodSettings:
         - ResourcePath: "/*"
@@ -116,6 +117,7 @@ Resources:
 
   ApiUsagePlan:
     Type: AWS::ApiGateway::UsagePlan
+    DependsOn: ApiGatewayApiProdStage
     Properties:
       UsagePlanName: BasicUsagePlan
       Description: Basic usage plan for my API
@@ -135,6 +137,24 @@ Resources:
       KeyId: !Ref ApiKey
       KeyType: API_KEY
       UsagePlanId: !Ref ApiUsagePlan
+
+  ApiGatewayCloudWatchRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: apigateway.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs
+
+  ApiGatewayAccount:
+    Type: AWS::ApiGateway::Account
+    Properties:
+      CloudWatchRoleArn: !GetAtt ApiGatewayCloudWatchRole.Arn
 
 Outputs:
   ApiEndpoint:
