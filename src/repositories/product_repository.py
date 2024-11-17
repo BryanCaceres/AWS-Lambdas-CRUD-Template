@@ -3,7 +3,7 @@ import boto3
 import uuid
 from botocore.exceptions import ClientError
 from src.config.settings import app_config
-from typing import Dict, Optional, List
+from typing import Dict, Optional, List, Tuple
 from datetime import timezone, datetime
 
 class ProductRepository:
@@ -11,8 +11,45 @@ class ProductRepository:
         """
         Inicializa el repositorio con conexión a DynamoDB
         """
-        self.dynamodb = boto3.resource('dynamodb', region_name=app_config.aws_region)
+        self.dynamodb = boto3.resource('dynamodb', region_name=app_config._config.aws_region)
         self.table = self.dynamodb.Table('products')
+
+    def get_by_pk(self, uuid: str) -> Optional[Dict]:
+        """
+        Obtiene un producto por su UUID
+        :param uuid: UUID del producto
+        :return: Producto encontrado o None
+        """
+        try:
+            response = self.table.get_item(
+                Key={'uuid': uuid},
+                ConsistentRead=True
+            )
+            
+            product = response.get('Item')
+            if not product:
+                logging.error(f'No existe el producto con uuid {uuid}')
+                return None
+                
+            logging.info(f'Producto obtenido: {product}')
+            return product
+        except ClientError as get_by_pk_error:
+            logging.error(f'Error obteniendo producto de DynamoDB: {get_by_pk_error}')
+            raise
+
+    def get(self) -> List[Dict]:
+        """
+        Obtiene todos los productos de DynamoDB
+        :return: Lista de productos en tabla products
+        """
+        try:
+            response = self.table.scan()
+            products = response.get('Items', [])
+            logging.info(f'Productos obtenidos: {len(products)}')
+            return products
+        except ClientError as get_error:
+            logging.error(f'Error obteniendo productos de DynamoDB: {get_error}')
+            raise
 
     def create(self, product: Dict) -> Dict:
         """
@@ -30,10 +67,10 @@ class ProductRepository:
             logging.info(f'Producto creado: {product}')
             
             return product
-        except ClientError as e:
-            logging.error(f'Error creando producto en DynamoDB: {e}')
+        except ClientError as create_error:
+            logging.error(f'Error creando producto en DynamoDB: {create_error}')
             raise
-
+        
     def update(self, uuid: str, product_data: Dict) -> Dict:
         """
         Actualiza un producto existente
@@ -69,63 +106,33 @@ class ProductRepository:
             logging.info(f'Producto actualizado: {updated_product}')
             
             return updated_product
-        except ClientError as e:
-            logging.error(f'Error actualizando producto en DynamoDB: {e}')
+        except ClientError as update_error:
+            logging.error(f'Error actualizando producto en DynamoDB: {update_error}')
             raise
 
-    def get_by_pk(self, uuid: str) -> Optional[Dict]:
+    def delete(self, uuid: str) -> Tuple[Dict, bool]:
         """
-        Obtiene un producto por su UUID
+        Elimina un producto por su UUID y retorna sus datos
         :param uuid: UUID del producto
-        :return: Producto encontrado o None
+        :return: Tupla con (datos del producto, éxito de la eliminación)
         """
         try:
-            response = self.table.get_item(
-                Key={'uuid': uuid},
-                ConsistentRead=True
-            )
-            
-            product = response.get('Item')
+            product = self.get_by_pk(uuid)
             if not product:
-                logging.error(f'No existe el producto con uuid {uuid}')
-                return None
-                
-            logging.info(f'Producto obtenido: {product}')
-            return product
-        except ClientError as e:
-            logging.error(f'Error obteniendo producto de DynamoDB: {e}')
-            raise
-
-    def get(self) -> List[Dict]:
-        """
-        Obtiene todos los productos de DynamoDB
-        :return: Lista de productos
-        """
-        try:
-            response = self.table.scan()
-            products = response.get('Items', [])
-            logging.info(f'Productos obtenidos: {len(products)}')
-            return products
-        except ClientError as e:
-            logging.error(f'Error obteniendo productos de DynamoDB: {e}')
-            raise
-
-    def delete(self, uuid: str) -> bool:
-        """
-        Elimina un producto por su UUID
-        :param uuid: UUID del producto
-        :return: True si se eliminó correctamente
-        """
-        try:
+                return None, False
+            
             self.table.delete_item(
                 Key={'uuid': uuid},
-                ConditionExpression='attribute_exists(uuid)'
+                ConditionExpression='attribute_exists(#pk)',
+                ExpressionAttributeNames={
+                    '#pk': 'uuid'
+                }
             )
             logging.info(f'Producto eliminado: {uuid}')
-            return True
-        except ClientError as e:
-            if e.response['Error']['Code'] == 'ConditionalCheckFailedException':
-                logging.error(f'No existe el producto con uuid {uuid}')
-                return False
-            logging.error(f'Error eliminando producto en DynamoDB: {e}')
-            raise
+            return product, True
+            
+        except ClientError as delete_error:
+            logging.error(f'Error al ejecutar delete_item: {delete_error}')
+            if delete_error.response['Error']['Code'] == 'ConditionalCheckFailedException':
+                return None, False
+            raise delete_error
