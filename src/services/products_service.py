@@ -6,11 +6,11 @@ class ProductsService:
     def __init__(self):
         self.product_repository = ProductRepository()
 
-    def get_product_by_id(self, id: int) -> Dict:
+    def get_product_by_pk(self, id: int) -> Dict:
         try: 
             logging.info(f'Acaban de solicitar el producto con id {id}')
             
-            found_product = self.product_repository.get_by_id(id)
+            found_product = self.product_repository.get_by_pk(id)
             
             return found_product
         except Exception as e:
@@ -48,3 +48,34 @@ class ProductsService:
         except Exception as e:
             logging.error(f'Error al crear el producto: {e}')
             return {'error': 'Error al crear el producto'}, 500
+
+    def get_products(self) -> Dict:
+        """
+        Obtiene todos los productos
+        :return: Lista de productos o mensaje de error
+        """
+        try:
+            logging.info('Solicitando todos los productos')
+            products = self.product_repository.get()
+            return {'products': products}
+        except Exception as e:
+            logging.error(f'Error al obtener productos: {e}')
+            return {'error': 'Error al obtener los productos'}, 500
+
+    def delete_product(self, id: str) -> Dict:
+        """
+        Elimina un producto por su ID
+        :param id: ID del producto a eliminar
+        :return: Mensaje de éxito o error
+        """
+        try:
+            logging.info(f'Eliminando producto con id {id}')
+            success = self.product_repository.delete(id)
+            
+            if not success:
+                return {'error': 'Producto no encontrado'}, 404
+            
+            return {'message': 'Producto eliminado correctamente'}
+        except Exception as e:
+            logging.error(f'Error al eliminar el producto: {e}')
+            return {'error': 'Error al eliminar el producto'}, 500

@@ -3,7 +3,7 @@ import boto3
 import uuid
 from botocore.exceptions import ClientError
 from src.config.settings import app_config
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 from datetime import timezone, datetime
 
 class ProductRepository:
@@ -73,7 +73,7 @@ class ProductRepository:
             logging.error(f'Error actualizando producto en DynamoDB: {e}')
             raise
 
-    def get_by_id(self, id: str) -> Optional[Dict]:
+    def get_by_pk(self, id: str) -> Optional[Dict]:
         """
         Obtiene un producto por su ID
         :param id: ID del producto
@@ -94,4 +94,38 @@ class ProductRepository:
             return product
         except ClientError as e:
             logging.error(f'Error obteniendo producto de DynamoDB: {e}')
+            raise
+
+    def get(self) -> List[Dict]:
+        """
+        Obtiene todos los productos de DynamoDB
+        :return: Lista de productos
+        """
+        try:
+            response = self.table.scan()
+            products = response.get('Items', [])
+            logging.info(f'Productos obtenidos: {len(products)}')
+            return products
+        except ClientError as e:
+            logging.error(f'Error obteniendo productos de DynamoDB: {e}')
+            raise
+
+    def delete(self, id: str) -> bool:
+        """
+        Elimina un producto por su ID
+        :param id: ID del producto
+        :return: True si se eliminó correctamente
+        """
+        try:
+            self.table.delete_item(
+                Key={'id': id},
+                ConditionExpression='attribute_exists(id)'
+            )
+            logging.info(f'Producto eliminado: {id}')
+            return True
+        except ClientError as e:
+            if e.response['Error']['Code'] == 'ConditionalCheckFailedException':
+                logging.error(f'No existe el producto con id {id}')
+                return False
+            logging.error(f'Error eliminando producto en DynamoDB: {e}')
             raise

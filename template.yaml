@@ -71,6 +71,24 @@ Resources:
             RequestModel:
               Model: ProductCreateModel
               ValidateBody: true
+        GetAllProducts:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /products
+            Method: get
+            Auth:
+              ApiKey: true
+        DeleteProduct:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /products/{id}
+            Method: delete
+            Auth:
+              ApiKey: true
+            RequestParameters:
+              method.request.path.id: true
       Policies:
         - Statement:
             - Effect: Allow
