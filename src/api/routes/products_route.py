@@ -3,13 +3,13 @@ from src.services.products_service import ProductsService
 
 products_bp = Blueprint('products', __name__)
 
-@products_bp.route('/<int:id>', methods=['GET'])
+@products_bp.route('/<string:id>', methods=['GET'])
 def get_product(id):
     products_service = ProductsService()
     product = products_service.get_product_by_id(id)
     return jsonify(message=product)
 
-@products_bp.route('/<int:id>', methods=['PATCH'])
+@products_bp.route('/<string:id>', methods=['PATCH'])
 def update_product(id):
     products_service = ProductsService()
     product = products_service.update_product(id, request.json)

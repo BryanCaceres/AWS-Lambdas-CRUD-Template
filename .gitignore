@@ -209,6 +209,8 @@ pytestdebug.log
 # Translations
 *.mo
 *.pot
+env.json
+.env.json
 
 # Django stuff:
 *.log
