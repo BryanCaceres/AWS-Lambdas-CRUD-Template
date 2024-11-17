@@ -31,7 +31,7 @@ class ConfigurationManager:
                         "AWS_REGION": "us-east-1"
                     }
             else:
-                #Si es una ejecucion en AWS, se lee desde Parameter Store
+                #Si es una ejecucion en AWS, se lee desde Parameter Store de AWS
                 params = parameters.get_parameter(
                     "/flask-api/config",
                     transform="json",
