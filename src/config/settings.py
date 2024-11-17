@@ -11,12 +11,10 @@ import os
 class AppConfig:
     log_level: str
     aws_region: str = "us-east-1"
-    aws_region: str = "us-east-1"
 
 class ConfigurationManager:
     def __init__(self):
         self._config: Optional[AppConfig] = None
-        self.load_configuration()
         self.load_configuration()
 
     def load_configuration(self) -> AppConfig:
@@ -50,11 +48,9 @@ class ConfigurationManager:
             self._config = AppConfig(
                 log_level=params.get("LOG_LEVEL", "DEBUG"),
                 aws_region=params.get("AWS_REGION", "us-east-1")
-                aws_region=params.get("AWS_REGION", "us-east-1")
             )
             
             self._configure_logging()
-            logging.debug(f"Configuración cargada: {self._config}")
             logging.debug(f"Configuración cargada: {self._config}")
             return self._config
         except Exception as e:
@@ -67,5 +63,4 @@ class ConfigurationManager:
             format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
         )
 
-app_config = ConfigurationManager()
 app_config = ConfigurationManager()
