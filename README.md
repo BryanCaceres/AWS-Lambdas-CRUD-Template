@@ -41,6 +41,17 @@ sam validate --lint
 
 Después de haber probado localmente tu template.yaml, puedes desplegar tu proyecto en AWS.
 
+(Recomendado para validar configuraciones al desplegar)
 ```bash
 sam deploy --guided
 ```
+o 
+
+```bash
+sam deploy
+```
+
+# Documentación útil
+
+Buenas prácticas recomendadas por AWS para lambdas:
+[Recomendaciones para Python](https://docs.aws.amazon.com/lambda/latest/dg/python-handler.html)
