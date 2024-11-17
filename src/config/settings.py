@@ -8,19 +8,17 @@ import os
 @dataclass
 class AppConfig:
     log_level: str
-    database_url: Optional[str] = None
-    api_key: Optional[str] = None
-    jwt_secret_key: Optional[str] = None
     aws_region: str = "us-east-1"
 
 class ConfigurationManager:
     def __init__(self):
         self._config: Optional[AppConfig] = None
+        self.load_configuration()
 
     def load_configuration(self) -> AppConfig:
         try:
             if os.getenv('AWS_SAM_LOCAL'):
-                #Si es una ejecucion local, se lee el archivo env.json
+                logging.info("Ejecucion local de la AWS Lambda")
                 try:
                     with open('env.json', 'r') as f:
                         params = json.load(f)
@@ -37,12 +35,9 @@ class ConfigurationManager:
                     transform="json",
                     force_fetch=True
                 )
-            
+
             self._config = AppConfig(
                 log_level=params.get("LOG_LEVEL", "DEBUG"),
-                database_url=params.get("DATABASE_URL"),
-                api_key=params.get("API_KEY"),
-                jwt_secret_key=params.get("JWT_SECRET_KEY"),
                 aws_region=params.get("AWS_REGION", "us-east-1")
             )
             
@@ -59,4 +54,4 @@ class ConfigurationManager:
             format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
         )
 
-app_config = ConfigurationManager().load_configuration()
+app_config = ConfigurationManager()
