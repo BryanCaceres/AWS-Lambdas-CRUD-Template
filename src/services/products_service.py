@@ -1,6 +1,7 @@
 import logging
 from src.repositories.product_repository import ProductRepository
 from typing import Dict
+from src.exceptions.business_exceptions import ResourceNotFoundException
 
 class ProductsService:
     def __init__(self):
@@ -13,6 +14,10 @@ class ProductsService:
             found_product = self.product_repository.get_by_pk(id)
             
             return found_product
+
+        except ResourceNotFoundException as e:
+            logging.error(f'Producto no encontrado: {e}')
+            raise e
         except Exception as e:
             logging.error(f'Error al obtener el producto: {e}')
             return {'error': 'Error al obtener el producto'}, 500
@@ -26,6 +31,7 @@ class ProductsService:
             logging.info('Solicitando todos los productos')
             products = self.product_repository.get()
             return {'products': products}
+
         except Exception as e:
             logging.error(f'Error al obtener productos: {e}')
             return {'error': 'Error al obtener los productos'}, 500
@@ -53,11 +59,15 @@ class ProductsService:
         :return: Instancia del producto ya actualizado
         """
         try:
-            logging.info(f'Se quiere actualizar el producto con id {id} con los datos {product_data}')
-            
+            logging.info(f'Se quiere actualizar el producto con id {id}')
+            # Primero verificamos que exista
+            self.product_repository.get_by_pk(id)
             updated_product = self.product_repository.update(id, product_data)
-            
             return { "product_new_values": updated_product }
+
+        except ResourceNotFoundException as e:
+            logging.error(f'Producto no encontrado para actualizar: {e}')
+            raise e
         except Exception as e:
             logging.error(f'Error al actualizar el producto: {e}')
             return {'error': 'Error al actualizar el producto'}, 500
@@ -76,6 +86,10 @@ class ProductsService:
                 return {'error': 'Producto no encontrado'}, 404
             
             return { "deleted_product": deleted_product }
+
+        except ResourceNotFoundException as e:
+            logging.error(f'Producto no encontrado para actualizar: {e}')
+            raise e
         except Exception as e:
             logging.error(f'Error al eliminar el producto: {e}')
             return {'error': 'Error al eliminar el producto'}, 500

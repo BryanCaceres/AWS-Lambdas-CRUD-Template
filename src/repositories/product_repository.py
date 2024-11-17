@@ -5,12 +5,10 @@ from botocore.exceptions import ClientError
 from src.config.settings import app_config
 from typing import Dict, Optional, List, Tuple
 from datetime import timezone, datetime
+from src.exceptions.business_exceptions import ResourceNotFoundException
 
 class ProductRepository:
     def __init__(self):
-        """
-        Inicializa el repositorio con conexión a DynamoDB
-        """
         self.dynamodb = boto3.resource('dynamodb', region_name=app_config._config.aws_region)
         self.table = self.dynamodb.Table('products')
 
@@ -28,8 +26,7 @@ class ProductRepository:
             
             product = response.get('Item')
             if not product:
-                logging.error(f'No existe el producto con uuid {uuid}')
-                return None
+                raise ResourceNotFoundException("Producto", uuid)
                 
             logging.info(f'Producto obtenido: {product}')
             return product
@@ -70,7 +67,7 @@ class ProductRepository:
         except ClientError as create_error:
             logging.error(f'Error creando producto en DynamoDB: {create_error}')
             raise
-        
+ 
     def update(self, uuid: str, product_data: Dict) -> Dict:
         """
         Actualiza un producto existente
@@ -119,7 +116,7 @@ class ProductRepository:
         try:
             product = self.get_by_pk(uuid)
             if not product:
-                return None, False
+                raise ResourceNotFoundException("Producto", uuid)
             
             self.table.delete_item(
                 Key={'uuid': uuid},

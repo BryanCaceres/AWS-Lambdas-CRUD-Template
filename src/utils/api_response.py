@@ -2,6 +2,7 @@ from functools import wraps
 from flask import jsonify
 from typing import Any, Dict, Optional
 import logging
+from src.exceptions.business_exceptions import BusinessException, ResourceNotFoundException
 
 class ApiResponse:
     @staticmethod
@@ -33,7 +34,7 @@ class ApiResponse:
         return response
 
     @staticmethod
-    def error(error: Exception, message: str = "Error in operation", status_code: int = 500, error_code: Optional[str] = None) -> Dict[str, Any]:
+    def error(error: Exception, message: str = "Error in operation", status_code: int = 500) -> Dict[str, Any]:
         """
         Genera una respuesta de error estandarizada
         
@@ -41,11 +42,14 @@ class ApiResponse:
             message: error message
             status_code: HTTP status code
             details: additional error details
-            error_code: specific error code
         
         Returns:
             standard error response dictionary
         """
+        if isinstance(error, BusinessException):
+            status_code = error.status_code
+            message = error.message
+        
         response = {
             "status": {
                 "status_code": status_code,
@@ -57,9 +61,6 @@ class ApiResponse:
                 "exception_message": str(error)
             }
         }
-        
-        if error_code:
-            response["error_code"] = error_code
         
         logging.error(f"API Error - {message}: {str(error)}")
         
@@ -73,21 +74,22 @@ def api_response(func):
             
             if isinstance(result, tuple):
                 data, status_code = result
+                if isinstance(data, dict) and data.get('error') is True:
+                    return jsonify(data), status_code
                 response = ApiResponse.success(data, status_code=status_code)
-                return jsonify(response)
+                return jsonify(response), status_code
             elif result is None:
                 response = ApiResponse.success(None, status_code=204)
-                return jsonify(response)
+                return jsonify(response), 204
             else:
                 response = ApiResponse.success(result)
                 return jsonify(response)
         
+        except ResourceNotFoundException as e:
+            error_response = ApiResponse.error(e)
+            return jsonify(error_response), e.status_code
         except Exception as e:
-            error_details = {
-                "exception_type": type(e).__name__,
-                "exception_message": str(e)
-            }
-            response = ApiResponse.error(error=e, message="Internal server error", status_code=500, details=error_details)
-            return jsonify(response), 500
+            error_response = ApiResponse.error(e)
+            return jsonify(error_response), 500
     
     return wrapper
