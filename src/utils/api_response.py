@@ -3,6 +3,7 @@ from flask import jsonify
 from typing import Any, Dict, Optional
 import logging
 from src.exceptions.business_exceptions import BusinessException, ResourceNotFoundException
+from src.exceptions.error_handler import global_error_handler
 
 class ApiResponse:
     @staticmethod
@@ -66,30 +67,26 @@ class ApiResponse:
         
         return response
 
-def api_response(func):
-    @wraps(func)
+def api_response(f):
+    @wraps(f)
+    @global_error_handler()
     def wrapper(*args, **kwargs):
-        try:
-            result = func(*args, **kwargs)
-            
-            if isinstance(result, tuple):
-                data, status_code = result
-                if isinstance(data, dict) and data.get('error') is True:
-                    return jsonify(data), status_code
-                response = ApiResponse.success(data, status_code=status_code)
-                return jsonify(response), status_code
-            elif result is None:
-                response = ApiResponse.success(None, status_code=204)
-                return jsonify(response), 204
-            else:
-                response = ApiResponse.success(result)
-                return jsonify(response)
+        result = f(*args, **kwargs)
         
-        except ResourceNotFoundException as e:
-            error_response = ApiResponse.error(e)
-            return jsonify(error_response), e.status_code
-        except Exception as e:
-            error_response = ApiResponse.error(e)
-            return jsonify(error_response), 500
+        if isinstance(result, tuple):
+            data, status_code = result
+        else:
+            data, status_code = result, 200
+            
+        response = {
+            "error": False,
+            "status": {
+                "status_code": status_code,
+                "message": "Successful operation"
+            },
+            "data": data
+        }
+        
+        return jsonify(response), status_code
     
     return wrapper
