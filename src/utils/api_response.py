@@ -77,7 +77,6 @@ def api_response(f):
             data, status_code = result
         else:
             data, status_code = result, 200
-            
         response = {
             "error": False,
             "status": {
