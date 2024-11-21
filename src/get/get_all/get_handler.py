@@ -2,21 +2,39 @@ import logging
 import boto3
 from botocore.exceptions import ClientError
 from typing import Dict, Optional
+import json
+from decimal import Decimal
+from aws_lambda_powertools import Logger
+
+logger = Logger(service="ProductsAPI")
 
 dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
 table = dynamodb.Table('products')
 
-def lambda_handler(event, context):
+class DecimalEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, Decimal):
+            return float(obj)
+        return super(DecimalEncoder, self).default(obj)
 
+def lambda_handler(event, context):
+    
+    logger.info(f'Event: {event}')
     products = get_all()
     
     return {
-        "data": products,
-        "error": False,
-        "status": {
-            "message": "Successful operation",
-            "status_code": 200
-        }
+        "statusCode": 200,
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "body": json.dumps({
+            "data": products,
+            "error": False,
+            "status": {
+                "message": "Successful operation",
+                "status_code": 200
+            }
+        }, cls=DecimalEncoder)
     }
 
 def get_all() -> Optional[Dict]:
@@ -27,7 +45,7 @@ def get_all() -> Optional[Dict]:
     try:
         response = table.scan()
         products = response.get('Items', [])
-        logging.info(f'Productos obtenidos: {len(products)}')
+        logger.info(f'Productos obtenidos: {len(products)}')
         
         if not products:
             raise ClientError("No se encontraron productos")
@@ -35,6 +53,6 @@ def get_all() -> Optional[Dict]:
         return products
     
     except ClientError as e:
-        logging.error(f'Error al obtener los productos: {e}')
+        logger.error(f'Error al obtener los productos: {e}')
         raise e
     
