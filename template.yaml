@@ -1,65 +1,29 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: >
-  flask-aws-lambda-api
-
-  Sample SAM Template for flask-aws-lambda-api
+  CRUD API In AWS Lambda - Microservices Architecture
+  
+  Sample SAM Template for CRUD API In AWS Lambda using DynamoDB as database with independent lambdas
 
 Globals:
   Function:
     Timeout: 20
     MemorySize: 256
+    Environment:
+      Variables:
+        POWERTOOLS_SERVICE_NAME: products-api
+        LOG_LEVEL: INFO
 
 Resources:
-  FlaskLayer:
-    Type: AWS::Serverless::LayerVersion
-    Properties:
-      LayerName: flask-layer
-      Description: Layer for Flask and dependencies v1.0.0
-      ContentUri: lambda-layers/flask-layer
-      CompatibleRuntimes:
-        - python3.9
-      RetentionPolicy: Retain
-  FlaskApi:
+  CreateProductFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: .
-      Handler: src.lambda_handler.lambda_handler
+      CodeUri: src/create
+      Handler: create_handler.lambda_handler
       Runtime: python3.9
-      Architectures:
-        - x86_64
-      Layers:
-        - !Ref FlaskLayer
+      Policies:
+        - !Ref ProductsFunctionPolicy
       Events:
-        HealthCheckApi:
-          Type: Api
-          Properties:
-            RestApiId: !Ref ApiGatewayApi
-            Path: /health
-            Method: get
-            Auth:
-              ApiKey: true
-        GetProduct:
-          Type: Api
-          Properties:
-            RestApiId: !Ref ApiGatewayApi
-            Path: /products/{pk}
-            Method: get
-            Auth:
-              ApiKey: true
-            RequestParameters:
-              method.request.path.pk: true
-        UpdateProduct:
-          Type: Api
-          Properties:
-            RestApiId: !Ref ApiGatewayApi
-            Path: /products/{pk}
-            Method: patch
-            Auth:
-              ApiKey: true
-            RequestModel:
-              Model: ProductUpdateModel
-              ValidateBody: true
         CreateProduct:
           Type: Api
           Properties:
@@ -71,6 +35,36 @@ Resources:
             RequestModel:
               Model: ProductCreateModel
               ValidateBody: true
+
+  GetProductFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/get/get_by_pk
+      Handler: get_by_pk_handler.lambda_handler
+      Runtime: python3.9
+      Policies:
+        - !Ref ProductsFunctionPolicy
+      Events:
+        GetProduct:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /products/{primary_key}
+            Method: get
+            Auth:
+              ApiKey: true
+            RequestParameters:
+              method.request.path.primary_key: true
+
+  GetAllProductsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/get/get_all
+      Handler: get_handler.lambda_handler
+      Runtime: python3.9
+      Policies:
+        - !Ref ProductsFunctionPolicy
+      Events:
         GetAllProducts:
           Type: Api
           Properties:
@@ -79,55 +73,76 @@ Resources:
             Method: get
             Auth:
               ApiKey: true
+
+  UpdateProductFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/update
+      Handler: update_handler.lambda_handler
+      Runtime: python3.9
+      Policies:
+        - !Ref ProductsFunctionPolicy
+      Events:
+        UpdateProduct:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /products/{primary_key}
+            Method: patch
+            Auth:
+              ApiKey: true
+            RequestModel:
+              Model: ProductUpdateModel
+              ValidateBody: true
+
+  DeleteProductFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/delete
+      Handler: delete_handler.lambda_handler
+      Runtime: python3.9
+      Policies:
+        - !Ref ProductsFunctionPolicy
+      Events:
         DeleteProduct:
           Type: Api
           Properties:
             RestApiId: !Ref ApiGatewayApi
-            Path: /products/{pk}
+            Path: /products/{primary_key}
             Method: delete
             Auth:
               ApiKey: true
             RequestParameters:
-              method.request.path.pk: true
-      Policies:
-        - Statement:
-            - Effect: Allow
-              Action:
-                - ssm:GetParameter
-                - ssm:GetParameters
-                - dynamodb:GetItem
-                - dynamodb:PutItem
-                - dynamodb:UpdateItem
-                - dynamodb:DeleteItem
-              Resource:
-                - !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/flask-api/config'
-                - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/products'
-  ErrorAlarm:
-    Type: AWS::CloudWatch::Alarm
+              method.request.path.primary_key: true
+
+  ProductsFunctionPolicy:
+    Type: AWS::IAM::ManagedPolicy
     Properties:
-      AlarmDescription: Lambda function error rate > 1%
-      MetricName: Errors
-      Namespace: AWS/Lambda
-      Statistic: Sum
-      Period: 300
-      EvaluationPeriods: 1
-      Threshold: 1
-      ComparisonOperator: GreaterThanThreshold
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - dynamodb:GetItem
+              - dynamodb:PutItem
+              - dynamodb:UpdateItem
+              - dynamodb:DeleteItem
+              - dynamodb:Scan
+            Resource: !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/products'
 
   ApiGatewayApi:
     Type: AWS::Serverless::Api
-    DependsOn: ApiGatewayAccount
     Properties:
       StageName: Prod
       Models:
         ProductCreateModel:
           type: object
           contentType: application/json
-          schema: ${file(src/schemas/products/create.json)}
+          schema: ${file(src/schemas/create_product.json)}
         ProductUpdateModel:
           type: object
           contentType: application/json
-          schema: ${file(src/schemas/products/update.json)}
+          schema: ${file(src/schemas/update_product.json)}
       Auth:
         ApiKeyRequired: true
       Cors:
@@ -139,19 +154,20 @@ Resources:
           HttpMethod: "*"
           ThrottlingBurstLimit: 100
           ThrottlingRateLimit: 50
+
   ApiKey:
     Type: AWS::ApiGateway::ApiKey
     Properties:
-      Name: DefaultApiKey
-      Description: API Key creada desde template.yaml
+      Name: ProductsApiKey
+      Description: API Key for Products API
       Enabled: true
 
   ApiUsagePlan:
     Type: AWS::ApiGateway::UsagePlan
     DependsOn: ApiGatewayApiProdStage
     Properties:
-      UsagePlanName: BasicUsagePlan
-      Description: Basic usage plan for my API
+      UsagePlanName: ProductsApiUsagePlan
+      Description: Usage plan for Products API
       ApiStages:
         - ApiId: !Ref ApiGatewayApi
           Stage: Prod
@@ -169,31 +185,31 @@ Resources:
       KeyType: API_KEY
       UsagePlanId: !Ref ApiUsagePlan
 
-  ApiGatewayCloudWatchRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: apigateway.amazonaws.com
-            Action: sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs
-
-  ApiGatewayAccount:
-    Type: AWS::ApiGateway::Account
-    Properties:
-      CloudWatchRoleArn: !GetAtt ApiGatewayCloudWatchRole.Arn
-
 Outputs:
   ApiEndpoint:
     Description: "API Gateway endpoint URL for Prod stage"
     Value: !Sub "https://${ApiGatewayApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
-  FlaskApiFunction:
-    Description: "Flask API Lambda Function ARN"
-    Value: !GetAtt FlaskApi.Arn
-  FlaskApiRole:
-    Description: "IAM Role created for Flask API function"
-    Value: !GetAtt FlaskApi.Arn
+  
+  ApiKey:
+    Description: "API Key ID for authentication"
+    Value: !Ref ApiKey
+  
+  CreateProductFunction:
+    Description: "Create Product Lambda Function ARN"
+    Value: !GetAtt CreateProductFunction.Arn
+  
+  GetProductFunction:
+    Description: "Get Product Lambda Function ARN"
+    Value: !GetAtt GetProductFunction.Arn
+  
+  GetAllProductsFunction:
+    Description: "Get All Products Lambda Function ARN"
+    Value: !GetAtt GetAllProductsFunction.Arn
+  
+  UpdateProductFunction:
+    Description: "Update Product Lambda Function ARN"
+    Value: !GetAtt UpdateProductFunction.Arn
+  
+  DeleteProductFunction:
+    Description: "Delete Product Lambda Function ARN"
+    Value: !GetAtt DeleteProductFunction.Arn
