@@ -5,9 +5,12 @@
 ### Linux ###
 *~
 .env
+
 # Lambda Layer dependencies
-lambda-layers/flask-layer/python/*
-!lambda-layers/flask-layer/python/.gitkeep
+# Ignorar todo en lambda-layers/common/python/
+lambda-layers/common/python/*
+# Exceptuar la carpeta lambda_utils
+!lambda-layers/common/python/lambda_utils/
 
 # temporary files which can be created if a process still has a handle open of a deleted file
 .fuse_hidden*

@@ -1,68 +1,26 @@
-import logging
 import boto3
-import json
 from botocore.exceptions import ClientError
-from typing import Dict, Optional
-from decimal import Decimal
+from typing import Dict, Optional, Any
 from datetime import datetime, timezone
-from aws_lambda_powertools import Logger
 
-logger = Logger(service="ProductsAPI")
+from lambda_utils.decorators import lambda_handler_decorator
 
 dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
 table = dynamodb.Table('products')
 
-class DecimalEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, Decimal):
-            return float(obj)
-        return super(DecimalEncoder, self).default(obj)
+@lambda_handler_decorator
+def lambda_handler(event: Dict, context: Any) -> Dict:
 
-def lambda_handler(event, context):
-    try:
-        logger.info(f'Event: {event}')
-        
-        # Parseamos el body si viene como string
-        product_to_update = event['body']
-        if isinstance(product_to_update, str):
-            product_to_update = json.loads(product_to_update)
-            
-        primary_key = event['pathParameters'].get('primary_key')
-        logger.info(f'Primary key: {primary_key}')
-        logger.info(f'Product to update: {product_to_update}')
-        
-        updated_product = update(primary_key, product_to_update)
-        
-        return {
-            "statusCode": 200,
-            "headers": {
-                "Content-Type": "application/json"
-            },
-            "body": json.dumps({
-                "data": {"updated_product": updated_product},
-                "error": False,
-                "status": {
-                    "message": "Successful update operation",
-                    "status_code": 200
-                }
-            }, cls=DecimalEncoder)
-        }
-    except Exception as e:
-        logger.error(f'Error en la operación de actualización: {e}')
-        return {
-            "statusCode": 500,
-            "headers": {
-                "Content-Type": "application/json"
-            },
-            "body": json.dumps({
-                "data": None,
-                "error": True,
-                "status": {
-                    "message": str(e),
-                    "status_code": 500
-                }
-            }, cls=DecimalEncoder)
-        }
+    product_to_update = event['body']   
+    primary_key = event['pathParameters'].get('primary_key')
+
+    updated_product = update(primary_key, product_to_update)
+    
+    return {
+        "statusCode": 200,
+        "body": {"updated_product": updated_product},
+        "message": "Producto actualizado exitosamente"
+    }
 
 def update(primary_key: str, product_data: Dict) -> Optional[Dict]:
     """
@@ -95,11 +53,9 @@ def update(primary_key: str, product_data: Dict) -> Optional[Dict]:
         )
         
         updated_product = response.get('Attributes', {})
-        logger.info(f'Producto actualizado: {updated_product}')
         
         return updated_product
     
     except ClientError as e:
-        logger.error(f'Error al obtener los productos: {e}')
         raise e
     
