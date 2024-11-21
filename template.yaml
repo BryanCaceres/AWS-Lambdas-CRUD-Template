@@ -15,12 +15,24 @@ Globals:
         LOG_LEVEL: INFO
 
 Resources:
+  CommonLambdaLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: common-lambda-layer
+      Description: Common Lambda Layer with utilities
+      ContentUri: lambda-layers/common/
+      CompatibleRuntimes:
+        - python3.9
+      RetentionPolicy: Retain
+
   CreateProductFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: src/create
       Handler: create_handler.lambda_handler
       Runtime: python3.9
+      Layers:
+        - !Ref CommonLambdaLayer
       Policies:
         - !Ref ProductsFunctionPolicy
       Events:
@@ -42,6 +54,8 @@ Resources:
       CodeUri: src/get/get_by_pk
       Handler: get_by_pk_handler.lambda_handler
       Runtime: python3.9
+      Layers:
+        - !Ref CommonLambdaLayer
       Policies:
         - !Ref ProductsFunctionPolicy
       Events:
@@ -62,6 +76,8 @@ Resources:
       CodeUri: src/get/get_all
       Handler: get_handler.lambda_handler
       Runtime: python3.9
+      Layers:
+        - !Ref CommonLambdaLayer
       Policies:
         - !Ref ProductsFunctionPolicy
       Events:
@@ -80,6 +96,8 @@ Resources:
       CodeUri: src/update
       Handler: update_handler.lambda_handler
       Runtime: python3.9
+      Layers:
+        - !Ref CommonLambdaLayer
       Policies:
         - !Ref ProductsFunctionPolicy
       Events:
@@ -101,6 +119,8 @@ Resources:
       CodeUri: src/delete
       Handler: delete_handler.lambda_handler
       Runtime: python3.9
+      Layers:
+        - !Ref CommonLambdaLayer
       Policies:
         - !Ref ProductsFunctionPolicy
       Events:

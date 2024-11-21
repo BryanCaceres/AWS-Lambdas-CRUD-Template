@@ -12,10 +12,11 @@ Link asociados:
 
 ## Paso a Paso
 
-### Construir la capa con las dependencias de Flask
+### Construir la capa con las dependencias compartidas por las lambdas
 
 ```bash
-python build_layer.py
+cd lambda-layers/common
+pip install -r python/lambda_utils/requirements.txt -t python/
 ```
 
 ### Construir el proyecto en un contenedor de Docker
