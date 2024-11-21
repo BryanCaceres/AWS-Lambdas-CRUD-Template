@@ -1,64 +1,24 @@
-import logging
+from typing import Dict, Any
 import boto3
 from botocore.exceptions import ClientError
-from typing import Dict, Optional, Tuple
-from aws_lambda_powertools import Logger
-import json
-import traceback
-from decimal import Decimal
 
-logger = Logger(service="ProductsAPI")
+from lambda_utils.decorators import lambda_handler_decorator
 
 dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
 table = dynamodb.Table('products')
 
-class DecimalEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, Decimal):
-            return float(obj)
-        return super(DecimalEncoder, self).default(obj)
+@lambda_handler_decorator
+def lambda_handler(event: Dict, context: Any) -> Dict:
 
-def lambda_handler(event, context):
-    try:
-        logger.info(f'Event: {event}')
-        primary_key = event['pathParameters'].get('primary_key')
-        logger.info(f'Primary key: {primary_key}')
-        deleted_product = delete(primary_key)
-        
-        return {
-            "statusCode": 200,
-            "headers": {
-                "Content-Type": "application/json"
-            },
-            "body": json.dumps({
-                "data": {
-                    "deleted_product": deleted_product
-                },
-                "error": False,
-                "status": {
-                    "message": "Successful delete operation",
-                    "status_code": 200
-                }
-            }, cls=DecimalEncoder)
-        }
-    except Exception as e:
-        logger.info(f"Event: {event}")
-        logger.error(f"Error en la operación de eliminación: {e}")
-        logger.error(f"Traceback: {traceback.format_exc()}")
-        return {
-            "statusCode": 404 if "no encontrado" in str(e) else 500,
-            "headers": {
-                "Content-Type": "application/json"
-            },
-            "body": json.dumps({
-                "data": None,
-                "error": True,
-                "status": {
-                    "message": str(e),
-                    "status_code": 404 if "no encontrado" in str(e) else 500
-                }
-            })
-        }
+    primary_key = event['pathParameters'].get('primary_key')
+    deleted_product = delete(primary_key)
+    
+    return {
+        "statusCode": 200,
+        "body": {"deleted_product": deleted_product},
+        "message": "Producto eliminado exitosamente"
+    }
+
 
 def delete(primary_key: str) -> Dict:
     """
@@ -74,7 +34,6 @@ def delete(primary_key: str) -> Dict:
 
         product = response.get('Item')
         if not product:
-            logger.error(f"Producto con UUID {primary_key} no encontrado")
             raise Exception(f"Producto con UUID {primary_key} no encontrado")
 
         table.delete_item(
@@ -85,9 +44,7 @@ def delete(primary_key: str) -> Dict:
             }
         )
 
-        logger.info(f'Producto eliminado: {primary_key}')
         return product
 
     except ClientError as e:
-        logger.error(f'Error al eliminar el producto: {e}')
         raise e

@@ -2,9 +2,16 @@ import functools
 import json
 import traceback
 from typing import Dict, Any, Callable
+from decimal import Decimal
 from aws_lambda_powertools import Logger
 
 logger = Logger(service="LambdaUtils")
+
+class DecimalEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, Decimal):
+            return float(obj)
+        return super(DecimalEncoder, self).default(obj)
 
 def lambda_handler_decorator(func: Callable) -> Callable:
     @functools.wraps(func)
@@ -34,10 +41,10 @@ def lambda_handler_decorator(func: Callable) -> Callable:
                     "data": result.get("body", {}),
                     "error": False,
                     "status": {
-                        "message": "Successful operation",
+                        "message": result.get("message", "Successful operation"),
                         "status_code": result.get("statusCode", 200)
                     }
-                })
+                }, cls=DecimalEncoder)
             }
             
             logger.info(f"Response: {response}")

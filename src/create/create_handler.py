@@ -1,11 +1,8 @@
-import logging
 import boto3
-import json
 from botocore.exceptions import ClientError
-from typing import Dict
+from typing import Dict, Any
 import uuid
 from datetime import datetime, timezone
-import json
 
 from lambda_utils.decorators import lambda_handler_decorator
 
@@ -13,14 +10,15 @@ dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
 table = dynamodb.Table('products')
 
 @lambda_handler_decorator
-def lambda_handler(event, context):
+def lambda_handler(event: Dict, context: Any) -> Dict:
 
     product_to_create = event['body']
     created_product = create(product_to_create)
     
     return {
         "statusCode": 201,
-        "body": {"product": created_product}
+        "body": {"product": created_product},
+        "message": "Producto creado exitosamente"
     }
 
 def create(product: Dict) -> Dict:
@@ -37,5 +35,6 @@ def create(product: Dict) -> Dict:
         table.put_item(Item=product)
         
         return product
+
     except ClientError as e:
         raise e
