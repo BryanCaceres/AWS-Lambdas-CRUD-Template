@@ -112,6 +112,7 @@ Resources:
             RequestModel:
               Model: ProductUpdateModel
               ValidateBody: true
+            
 
   DeleteProductFunction:
     Type: AWS::Serverless::Function
@@ -150,31 +151,6 @@ Resources:
               - dynamodb:Scan
             Resource: !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/products'
 
-  ApiGatewayApi:
-    Type: AWS::Serverless::Api
-    Properties:
-      StageName: Prod
-      Models:
-        ProductCreateModel:
-          type: object
-          contentType: application/json
-          schema: ${file(src/schemas/create_product.json)}
-        ProductUpdateModel:
-          type: object
-          contentType: application/json
-          schema: ${file(src/schemas/update_product.json)}
-      Auth:
-        ApiKeyRequired: true
-      Cors:
-        AllowMethods: "'GET,POST,PATCH,DELETE,OPTIONS'"
-        AllowHeaders: "'Content-Type,X-Api-Key,Authorization'"
-        AllowOrigin: "'*'"
-      MethodSettings:
-        - ResourcePath: "/*"
-          HttpMethod: "*"
-          ThrottlingBurstLimit: 100
-          ThrottlingRateLimit: 50
-
   ApiKey:
     Type: AWS::ApiGateway::ApiKey
     Properties:
@@ -205,6 +181,54 @@ Resources:
       KeyType: API_KEY
       UsagePlanId: !Ref ApiUsagePlan
 
+  ApiGatewayApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+      Auth:
+        ApiKeyRequired: true
+      Cors:
+        AllowMethods: "'GET,POST,PATCH,DELETE,OPTIONS'"
+        AllowHeaders: "'Content-Type,X-Api-Key,Authorization'"
+        AllowOrigin: "'*'"
+      Models:
+        ProductCreateModel:
+          schema: "http://json-schema.org/draft-04/schema#"
+          title: "ProductCreateModel"
+          type: object
+          required:
+            - name
+            - price
+          properties:
+            name:
+              type: string
+              minLength: 2
+              maxLength: 150
+              description: "Product name"
+            price:
+              type: integer
+              minimum: 10
+              maximum: 1000000
+              description: "Product price in dollars"
+          additionalProperties: false
+        ProductUpdateModel:
+          type: object
+          required:
+            - name
+            - price
+          properties:
+            name:
+              type: string
+              minLength: 2
+              maxLength: 150
+              description: "Product name"
+            price:
+              type: integer
+              minimum: 1
+              maximum: 1000000
+              description: "Product price in dollars"
+          additionalProperties: false
+
 Outputs:
   ApiEndpoint:
     Description: "API Gateway endpoint URL for Prod stage"
@@ -214,22 +238,3 @@ Outputs:
     Description: "API Key ID for authentication"
     Value: !Ref ApiKey
   
-  CreateProductFunction:
-    Description: "Create Product Lambda Function ARN"
-    Value: !GetAtt CreateProductFunction.Arn
-  
-  GetProductFunction:
-    Description: "Get Product Lambda Function ARN"
-    Value: !GetAtt GetProductFunction.Arn
-  
-  GetAllProductsFunction:
-    Description: "Get All Products Lambda Function ARN"
-    Value: !GetAtt GetAllProductsFunction.Arn
-  
-  UpdateProductFunction:
-    Description: "Update Product Lambda Function ARN"
-    Value: !GetAtt UpdateProductFunction.Arn
-  
-  DeleteProductFunction:
-    Description: "Delete Product Lambda Function ARN"
-    Value: !GetAtt DeleteProductFunction.Arn
