@@ -2,21 +2,30 @@ import boto3
 from botocore.exceptions import ClientError
 from typing import Dict, Optional, Any
 from datetime import datetime, timezone
-from lambda_custom_layer import settings
+from lambda_custom_layer import settings, ResourceNotFoundException, APIException
 
 class UpdateService:
     def __init__(self):
-        self.dynamodb = boto3.resource('dynamodb', region_name=settings.region_name)
+        self.dynamodb = boto3.resource('dynamodb', region_name=settings.dynamodb_region_name)
         self.table = self.dynamodb.Table(settings.products_table)
 
-    def update(self,primary_key: str, product_data: Dict) -> Optional[Dict]:
+    def update(self, primary_key: str, product_data: Dict) -> Optional[Dict]:
         """
-        Actualiza un producto existente
-        :param primary_key: Primary key del producto
-        :param product_data: Nuevos datos del producto
-        :return: Producto actualizado
+        Updates an existing product
+        :param primary_key: Primary key of the product
+        :param product_data: New data of the product
+        :return: Updated product
         """
         try:
+            response = self.table.get_item(
+                Key={'uuid': primary_key},
+                ConsistentRead=True
+            )
+
+            product = response.get('Item')
+            if not product:
+                raise ResourceNotFoundException('product', primary_key)
+
             update_expression = "SET "
             expression_values = {}
             expression_names = {}
@@ -44,4 +53,11 @@ class UpdateService:
             return updated_product
         
         except ClientError as e:
-            raise e
+            error_code = e.response.get('Error', {}).get('Code', 'UnknownError')
+            error_message = e.response.get('Error', {}).get('Message', 'An unexpected error occurred.')
+
+            if error_code == 'UnknownError':
+                error_code = settings.default_error_code
+                error_message = settings.default_error_message
+
+            raise APIException(f"Error editing product: {error_message}", status_code=int(error_code))

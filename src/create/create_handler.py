@@ -14,5 +14,5 @@ def lambda_handler(event: Dict, context: Any) -> Dict:
     return {
         "statusCode": 201,
         "body": {"product": created_product},
-        "message": "Producto creado exitosamente"
+        "message": "Product created successfully"
     }

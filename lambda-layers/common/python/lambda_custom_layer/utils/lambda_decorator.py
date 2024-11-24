@@ -4,6 +4,7 @@ import traceback
 from typing import Dict, Any, Callable
 from decimal import Decimal
 from aws_lambda_powertools import Logger
+from ..exeptions.exeptions import APIException
 
 logger = Logger(service="LambdaUtils")
 
@@ -13,14 +14,13 @@ class DecimalEncoder(json.JSONEncoder):
             return float(obj)
         return super(DecimalEncoder, self).default(obj)
 
-def lambda_handler_decorator(func: Callable) -> Callable:
-    @functools.wraps(func)
+def lambda_handler_decorator(lambda_handler: Callable) -> Callable:
+    @functools.wraps(lambda_handler)
     def wrapper(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         try:
-
             logger.info(f"Incoming Event: {event}")
             
-            body = event['body']
+            body = event.get('body', {})
             if isinstance(body, str):
                 body_parsed = json.loads(body)
             else:
@@ -29,12 +29,13 @@ def lambda_handler_decorator(func: Callable) -> Callable:
             event['body'] = body_parsed
             logger.info(f"Body parsed: {body_parsed}")
 
-            result = func(event, context)
+            result = lambda_handler(event, context)
             
             response = {
                 "statusCode": result.get("statusCode", 200),
                 "headers": {
-                    "Content-Type": "application/json"
+                    "Content-Type": "application/json",
+                    "Access-Control-Allow-Origin": "*"
                 },
                 "body": json.dumps({
                     "data": result.get("body", {}),
@@ -48,9 +49,29 @@ def lambda_handler_decorator(func: Callable) -> Callable:
             
             logger.info(f"Response: {response}")
             return response
-        
+
+        except APIException as e:
+            logger.warning(f"Custom API Exception: {str(e)}")
+            error_response = {
+                "statusCode": e.status_code,
+                "headers": {
+                    "Content-Type": "application/json",
+                    "Access-Control-Allow-Origin": "*"
+                },
+                "body": json.dumps({
+                    "data": None,
+                    "error": True,
+                    "status": {
+                        "message": e.message,
+                        "status_code": e.status_code,
+                        "error_code": e.__class__.__name__
+                    }
+                })
+            }
+            return error_response
+
         except Exception as e:
-            logger.error(f"Error: {str(e)}")
+            logger.error(f"Internal Server Error: {str(e)}")
             logger.error(traceback.format_exc())
             
             error_response = {
@@ -63,12 +84,11 @@ def lambda_handler_decorator(func: Callable) -> Callable:
                     "data": None,
                     "error": True,
                     "status": {
-                        "message": str(e),
+                        "message": "Internal Server Error",
                         "status_code": 500
                     }
                 })
             }
-            
             return error_response
     
     return wrapper

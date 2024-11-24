@@ -14,5 +14,5 @@ def lambda_handler(event: Dict, context: Any) -> Dict:
     return {
         "statusCode": 200,
         "body": {"deleted_product": deleted_product},
-        "message": "Producto eliminado exitosamente"
+        "message": "Product deleted successfully"
     }
