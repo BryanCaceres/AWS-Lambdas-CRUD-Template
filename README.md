@@ -1,4 +1,4 @@
-# Esto es una plantilla para crear una API Serverless en Python con Flask
+# Template to create a Serverless API in Python using SAM serverless application model and AWS Lambdas
 
 Prerequisitos:
 - Tener instalado el SDK de AWS
@@ -29,7 +29,7 @@ sam build --use-container
 Esto te permitirá probar los endpoints en tu máquina local
 
 ```bash
-sam local start-api
+sam local start-api --port 3001
 ```
 
 ### Desplegar el proyecto en AWS
@@ -46,7 +46,7 @@ Después de haber probado localmente tu template.yaml, puedes desplegar tu proye
 ```bash
 sam deploy --guided
 ```
-o 
+o directamente
 
 ```bash
 sam deploy

@@ -3,11 +3,14 @@
 version = 0.1
 
 [default.global.parameters]
-stack_name = "flask-aws-lambda-api"
+stack_name = "serverless-lambda-api"
 
 [default.build.parameters]
 cached = true
 parallel = true
+template_file = "template.yaml"
+use_container = true
+manifest_file = "requirements.txt"
 
 [default.validate.parameters]
 lint = true
@@ -16,7 +19,7 @@ lint = true
 capabilities = "CAPABILITY_IAM"
 confirm_changeset = true
 resolve_s3 = true
-s3_prefix = "flask-aws-lambda-api"
+s3_prefix = "serverless-lambda-api"
 region = "us-east-1"
 image_repositories = []
 disable_rollback = true
