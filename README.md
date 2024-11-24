@@ -16,7 +16,7 @@ Link asociados:
 
 ```bash
 cd lambda-layers/common
-pip install -r python/lambda_utils/requirements.txt -t python/
+pip install -r python/lambda_custom_layer/requirements.txt -t python/
 ```
 
 ### Construir el proyecto en un contenedor de Docker
