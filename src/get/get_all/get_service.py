@@ -8,7 +8,7 @@ class GetService:
         self.dynamodb = boto3.resource('dynamodb', region_name=settings.dynamodb_region_name)
         self.table = self.dynamodb.Table(settings.products_table)
 
-    def get_all(self, last_evaluated_key: Optional[Dict] = None, limit: int = 50) -> Dict:
+    def get_all(self, last_evaluated_key: Optional[Dict] = None, limit: int = settings.default_limit) -> Dict:
         """
         Gets all products from DynamoDB
         :params:

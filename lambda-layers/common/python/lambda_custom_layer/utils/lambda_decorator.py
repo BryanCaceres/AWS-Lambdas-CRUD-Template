@@ -4,9 +4,11 @@ import traceback
 from typing import Dict, Any, Callable
 from decimal import Decimal
 from aws_lambda_powertools import Logger
+from ..core.settings import settings
 from ..exeptions.exeptions import APIException
 
 logger = Logger(service="LambdaUtils")
+logger.setLevel(settings.log_level)
 
 class DecimalEncoder(json.JSONEncoder):
     def default(self, obj):
