@@ -29,7 +29,7 @@ sam build --use-container
 Esto te permitirá probar los endpoints en tu máquina local
 
 ```bash
-sam local start-api --port 3001
+sam local start-api --port 3002
 ```
 
 ### Desplegar el proyecto en AWS

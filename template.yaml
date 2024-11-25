@@ -7,8 +7,7 @@ Description: >
 
 Globals:
   Function:
-    Timeout: 20
-    MemorySize: 256
+    Tracing: Active
 
 Resources:
   CustomLambdaLayer:
@@ -43,6 +42,8 @@ Resources:
             RequestModel:
               Model: ProductCreateModel
               ValidateBody: true
+      MemorySize: 256
+      Timeout: 15
 
   GetProductFunction:
     Type: AWS::Serverless::Function
@@ -65,6 +66,8 @@ Resources:
               ApiKey: true
             RequestParameters:
               method.request.path.primary_key: true
+      MemorySize: 128
+      Timeout: 10
 
   GetAllProductsFunction:
     Type: AWS::Serverless::Function
@@ -85,6 +88,8 @@ Resources:
             Method: get
             Auth:
               ApiKey: true
+      MemorySize: 256
+      Timeout: 20
 
   UpdateProductFunction:
     Type: AWS::Serverless::Function
@@ -108,7 +113,8 @@ Resources:
             RequestModel:
               Model: ProductUpdateModel
               ValidateBody: true
-            
+      MemorySize: 256
+      Timeout: 15
 
   DeleteProductFunction:
     Type: AWS::Serverless::Function
@@ -131,6 +137,8 @@ Resources:
               ApiKey: true
             RequestParameters:
               method.request.path.primary_key: true
+      MemorySize: 192
+      Timeout: 12
 
   ProductsFunctionPolicy:
     Type: AWS::IAM::ManagedPolicy

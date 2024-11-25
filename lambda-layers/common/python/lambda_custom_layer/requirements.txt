@@ -1,1 +1,2 @@
 aws-lambda-powertools==2.32.0 
+aws-xray-sdk==2.12.0 
