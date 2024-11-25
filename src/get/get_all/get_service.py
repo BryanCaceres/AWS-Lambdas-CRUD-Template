@@ -17,19 +17,20 @@ class GetService:
         :return: List of products in table products
         """
         try:
-            params = {
+            query_params = {
                 'Limit': limit,
-                'ReturnConsumedCapacity': 'TOTAL'
+                'ReturnConsumedCapacity': 'TOTAL',
+                'ConsistentRead': False
             }
             
             if last_evaluated_key:
-                params['ExclusiveStartKey'] = last_evaluated_key
+                query_params['ExclusiveStartKey'] = last_evaluated_key
             
-            response = self.table.scan(**params)
+            response = self.table.scan(**query_params)
             
             return {
                 'items': response.get('Items', []),
-                'last_evaluated_key': response.get('LastEvaluatedKey'),
+                'next_page_token': response.get('LastEvaluatedKey'),
                 'consumed_capacity': response.get('ConsumedCapacity')
             }
 
