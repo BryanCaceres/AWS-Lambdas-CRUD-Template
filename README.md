@@ -1,6 +1,6 @@
 # Template to create a Serverless API in Python using SAM serverless application model and AWS Lambdas
 
-![Example Diagram](https://file.notion.so/f/f/ca222c1a-d0ee-480a-95c4-19cbd36ebe72/ebb7c233-59a7-4afd-a0f3-1eed03abb144/Lambdas-Diagram.png?table=block&id=14a17ae1-a7a9-8060-b06a-cc00b53469e5&spaceId=ca222c1a-d0ee-480a-95c4-19cbd36ebe72&expirationTimestamp=1732752000000&signature=aS4o9vAFEl-2-RLrt7oX7CNVKZUwEfzmv1-W7NPgbW4&downloadName=Lambdas-Diagram.png)
+![Example Diagram](https://file.notion.so/f/f/ca222c1a-d0ee-480a-95c4-19cbd36ebe72/d8c47a51-89d7-42e5-969b-dfdbabeb417b/Lambda_Diagram-snippet.png?table=block&id=14a17ae1-a7a9-80f7-b773-e5cc88af5f75&spaceId=ca222c1a-d0ee-480a-95c4-19cbd36ebe72&expirationTimestamp=1732680000000&signature=m_WUD-i7Cq_d1Cs-CmniIgfWHz1P1yim3jUsj9HS86U&downloadName=Lambda+Diagram-snippet.png)
 
 This template includes:
 
